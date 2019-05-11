@@ -1,0 +1,70 @@
+------ CREATE DATABASE ------
+CREATE DATABASE BananaStand;
+
+------- CREATE TABLES -------
+use BananaStand
+
+GO
+
+CREATE TABLE [dbo].[Bananas_Purchased]
+(
+	Id int identity(1,1) Primary Key NOT NULL,
+	Bananas int NOT NULL,
+	PurchaseDate datetime NOT NULL,
+	ExpirationDate datetime NOT NULL,
+	Sold int NOT NULL,
+	CreatedDate datetime,
+	ModifiedDate datetime
+);
+
+CREATE TABLE [dbo].[Bananas_Sold]
+(
+	Id int identity(1,1) Primary Key NOT NULL,
+	BananasPurchasedId int Foreign Key References [dbo].Bananas_Purchased(Id) NOT NULL,
+	Bananas int NOT NULL,
+	SellDate datetime NOT NULL,
+	CreatedDate datetime,
+	ModifiedDate datetime
+);
+
+------- CREATE Bananas_Purchased Trigger -------
+
+CREATE TRIGGER [dbo].Trg_Bananas_Purchased
+ON [dbo].Bananas_Purchased
+AFTER INSERT, UPDATE
+AS
+BEGIN
+	SET NOCOUNT ON;
+	
+	IF EXISTS(SELECT * FROM INSERTED) AND NOT EXISTS(SELECT * FROM DELETED) 
+		UPDATE [dbo].Bananas_Purchased
+		SET [dbo].Bananas_Purchased.CreatedDate = GETDATE()
+		FROM INSERTED
+		WHERE inserted.id=Bananas_Purchased.Id
+	ELSE 
+		UPDATE dbo.Bananas_Purchased 
+		SET dbo.Bananas_Purchased.ModifiedDate = GETDATE()
+		FROM INSERTED
+		WHERE inserted.id=Bananas_Purchased.Id
+END;
+
+------- CREATE Bananas_Sold Trigger -------
+
+CREATE TRIGGER [dbo].Trg_Bananas_Sold
+ON [dbo].Bananas_Sold
+AFTER INSERT, UPDATE
+AS
+BEGIN
+	SET NOCOUNT ON;	
+	
+	IF EXISTS(SELECT * FROM INSERTED) AND NOT EXISTS(SELECT * FROM DELETED) 
+		UPDATE dbo.Bananas_Sold 
+		SET dbo.Bananas_Sold.CreatedDate = GETDATE()
+		FROM INSERTED
+		WHERE inserted.id=Bananas_Sold.Id
+	ELSE 
+		UPDATE dbo.Bananas_Sold 
+		SET dbo.Bananas_Sold.ModifiedDate = GETDATE()
+		FROM INSERTED
+		WHERE inserted.id=Bananas_Sold.Id
+END;

@@ -1,0 +1,277 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Banana Stand</title>
+    <link rel="stylesheet" type="text/css" href="Style/style.css" />
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/css/bootstrap-flex.min.css">
+</head>
+<body>
+    <div id="container">
+        <div class="row justify-content-md-center">
+            <div id="purchase" class="form-group">
+                <label>Purchase Bananas</label>
+                <input type="number" class="form-control" id="purchaseBananas" placeholder="Amount of bananas">
+                <label>Purchase Date</label>
+                <div class="input-group date purchaseDate" data-provide="datepicker">
+                    <input id="purchaseDatePicker" type="text" class="form-control">
+                    <div class="input-group-addon">
+                        <span class="glyphicon glyphicon-th"></span>
+                    </div>
+                </div>
+                <button id="purchaseButton" type="submit" class="btn btn-primary">Purchase</button>
+            </div>
+            <div id="sold" class="form-group">
+                <label>Bananas Sold</label>
+                <input type="number" class="form-control" id="soldBananas" placeholder="Amount of bananas">
+                <label>Sell Date</label>
+                <div class="input-group date sellDate" data-provide="datepicker">
+                    <input id="soldDatePicker" type="text" class="form-control">
+                    <div class="input-group-addon">
+                        <span class="glyphicon glyphicon-th"></span>
+                    </div>
+                </div>
+                <button id="soldButton" type="submit" class="btn btn-primary">Sold</button>
+            </div>
+            <div class="col-sm-12 row justify-content-md-center">
+                <label class="col-sm-12 text-center"><strong>Get Metrics</strong></label>
+                <div id="purchase" class="form-group col-sm-4">
+                    <label for="startDate">Start Date</label>
+                    <div class="input-group date startDate" data-provide="datepicker">
+                        <input id="startDatePicker" type="text" class="form-control">
+                        <div class="input-group-addon">
+                            <span class="glyphicon glyphicon-th"></span>
+                        </div>
+                    </div>
+
+                    <label for="startDate">End Date</label>
+                    <div class="input-group date endDate" data-provide="datepicker">
+                        <input id="endDatePicker" type="text" class="form-control">
+                        <div class="input-group-addon">
+                            <span class="glyphicon glyphicon-th"></span>
+                        </div>
+                    </div>
+                    <button id="getMetricsButton" class="btn btn-primary float-right">Get Metrics</button>
+                </div>
+            </div>
+        </div>
+        <div class="row justify-content-md-center">
+
+            <table id="metricInfo" class="table col-sm-8">
+                <thead class="thead-dark">
+                    <tr>
+                        <th scope="col" class="text-center">Bananas Purchased</th>
+                        <th scope="col" class="text-center">Bananas Expired</th>
+                        <th scope="col" class="text-center">Bananas Sold</th>
+                        <th scope="col" class="text-center">Profit / Loss</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div id="spinner"></div>
+        </div>
+    </div>
+
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+    <!-- Bootstrap 4.0 -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha/js/bootstrap.min.js"></script>
+
+    <!-- Bootstrap Date-Picker Plugin -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.4.1/js/bootstrap-datepicker.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.4.1/css/bootstrap-datepicker3.css" />
+
+    <!-- Bootstrap Glyphicons -->
+    <link href="/Style/Glyphicons/bootstrap4-glyphicons/css/bootstrap-glyphicons.min.css" rel="stylesheet" type="text/css" />
+
+    <script type="text/javascript">
+
+        (function () {
+
+            var purchaseUrl = "http://localhost:52819/api/purchasing";
+            var soldUrl = "http://localhost:52819/api/sold";
+            var metricUrl = "http://localhost:52819/api/metrics";
+
+            $(document).ready(function () {
+                $('.purchaseDate').datepicker({
+                    autoclose: true,
+                    format: 'yyyy-mm-dd'
+                });
+                $('.sellDate').datepicker({
+                    autoclose: true,
+                    format: 'yyyy-mm-dd'
+                });
+                $('#purchaseButton').on('click', purchaseBananas);
+                $('#soldButton').on('click', soldBananas);
+                $('#getMetricsButton').on('click', getMetrics);
+                $('.startDate').datepicker({
+                    autoclose: true,
+                    format: 'yyyy-mm-dd'
+                })
+                    .on('changeDate', function (selected) {
+                        var startDate = new Date(selected.date.valueOf());
+                        startDate.setDate(startDate.getDate(new Date(selected.date.valueOf())));
+                        $('.endDate').datepicker('setStartDate', startDate);
+                        $('#endDatePicker').val('');
+                    });
+                $('.endDate')
+                    .datepicker({
+                        autoclose: true,
+                        format: 'yyyy-mm-dd'
+                    })
+            });
+
+            var purchaseBananas = function () {
+                var bananas = $('#purchaseBananas').val();
+                var purchaseDate = $('#purchaseDatePicker').val();
+
+                if (!bananas && !purchaseDate) {
+                    alert('Please provide banana amount and purchase date');
+                    return;
+                } else if (!bananas) {
+                    alert('Please provide banana amount');
+                    return;
+                } else if (!purchaseDate) {
+                    alert('Please provide purchase date');
+                    return;
+                }
+
+                var purchaseData = {
+                    bananas: bananas,
+                    transactionDate: purchaseDate
+                }
+
+                var settings = {
+                    type: 'post',
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    data: JSON.stringify(purchaseData),
+                    datatype: 'html',
+                    success: purchaseBananasSuccess,
+                    error: purchaseBananasError
+                }
+                $.ajax(`${purchaseUrl}/bananas`, settings);
+            }
+
+            var purchaseBananasSuccess = function () {
+                alert('success');
+                $('#purchaseBananas').val('');
+                $('#purchaseDatePicker').val('');
+            }
+
+            var purchaseBananasError = function () {
+                alert('Internal Server Error');
+            }
+
+            var soldBananas = function () {
+                var bananas = $('#soldBananas').val();
+                var sellDate = $('#soldDatePicker').val();
+
+                if (!bananas && !sellDate) {
+                    alert('Please provide banana amount and sell date');
+                    return;
+                } else if (!bananas) {
+                    alert('Please provide banana amount');
+                    return;
+                } else if (!sellDate) {
+                    alert('Please provide sell date');
+                    return;
+                }
+
+                var soldData = {
+                    bananas: bananas,
+                    transactionDate: sellDate
+                }
+
+                var settings = {
+                    type: 'post',
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    data: JSON.stringify(soldData),
+                    datatype: 'html',
+                    success: soldBananasSuccess,
+                    error: soldBananasError
+                }
+
+                $.ajax(`${soldUrl}/bananas`, settings);
+            }
+
+            var soldBananasSuccess = function () {
+                alert('success');
+                $('#soldBananas').val('');
+                $('#soldDatePicker').val('');
+            }
+
+            var soldBananasError = function () {
+                alert('Internal Server Error');
+            }
+
+            var getMetrics = function () {
+                var startDate = $('#startDatePicker').val();
+                var endDate = $('#endDatePicker').val();
+
+                if (!startDate && !endDate) {
+                    alert('Please provide start and end date');
+                    return;
+                } else if (!startDate) {
+                    alert('Please provide start date');
+                    return;
+                } else if (!endDate) {
+                    alert('Please provide end date');
+                    return;
+                }
+
+                $('#metricInfo tbody').empty();
+
+                var settings = {
+                    type: 'GET',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    success: getMetricSuccess,
+                    error: getMetricError
+                }
+
+                addSpinner();
+                $.ajax(`${metricUrl}/bananas/${startDate}/${endDate}`, settings);
+            }
+
+            var getMetricSuccess = function (res) {
+                $('#metricInfo tbody').append(`<tr>
+                                                                       <td class="text-center">${res.Bananas}</td>
+                                                                       <td class="text-center">${res.BananasExpired}</td>
+                                                                       <td class="text-center">${res.BananasSold}</td>
+                                                                   </tr>`);
+
+                if (res.ProfitLoss) {
+                    res.ProfitLoss.split('$').pop() > 0
+                        ? $('#metricInfo tbody tr').append(`<td id="profitLoss" class="text-center" style="color: green">+${res.ProfitLoss}</td>`)
+                        : $('#metricInfo tbody tr').append(`<td id="profitLoss" class="text-center" style="color: red">-${res.ProfitLoss.replace('(', '').replace(')', '')}</td>`)
+                } else {
+                    $('#metricInfo tbody tr').append(`<td id="profitLoss" class="text-center">0</td>`)
+                }
+                removeSpinner();
+            }
+
+            var getMetricError = function () {
+                alert('error');
+                removeSpinner();
+            }
+
+            var addSpinner = function () {
+                $('#spinner').addClass('spinner');
+            }
+
+            var removeSpinner = function () {
+                $('#spinner').removeClass('spinner');
+            }
+        })();
+
+    </script>
+</body>
+</html>

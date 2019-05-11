@@ -1,0 +1,47 @@
+﻿html, body {
+    height: 100% !important;
+}
+
+#container {
+    padding: 5%;
+}
+
+#purchase {
+    padding-right: 25px;
+}
+
+#sold {
+    padding-left: 25px;
+}
+
+.green {
+    color: green;
+}
+
+.red {
+    color: red;
+}
+
+/* Spinner */
+@keyframes spinner {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spinner:before {
+    content: '';
+    box-sizing: border-box;
+    position: absolute;
+    top: 80%;
+    left: 50%;
+    width: 120px;
+    height: 120px;
+    margin-top: -60px;
+    margin-left: -60px;
+    border-radius: 50%;
+    border-top: 4px solid #009cde;
+    border-right: 4px solid transparent;
+    animation: spinner .9s linear infinite;
+    z-index: 1000;
+}
